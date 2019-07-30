@@ -1,6 +1,29 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+def sort_match(M):
+    new_M = np.copy(M)
+    
+    elos_team_A = M[:,0]
+    elos_team_B = M[:,1]
+    
+    elos_team_A_idx = np.unravel_index(np.argsort(elos_team_A, axis=None), elos_team_A.shape)
+    elos_team_B_idx = np.unravel_index(np.argsort(elos_team_B, axis=None), elos_team_B.shape)
+    
+    elos_team_A = elos_team_A[elos_team_A_idx]
+    elos_team_B = elos_team_B[elos_team_A_idx]
+    
+    new_M[:,0] = elos_team_A[::-1]
+    new_M[:,1] = elos_team_B[::-1]
+    
+    if M.shape[1] > 2:
+        glicko_team_A = M[elos_team_A_idx,2]
+        glicko_team_B = M[elos_team_B_idx,3]
+        new_M[:,2] = glicko_team_A[::-1]
+        new_M[:,3] = glicko_team_B[::-1]
+    
+    return new_M
+
 def get_draw_rate(R1, R2):
     rd = np.abs(R1 - R2)
     ra = (R1 + R2)/2
@@ -119,4 +142,36 @@ def match_results(M, seed=None, games_per_board=2):
         M_results[idx] = np.asarray([g_point, games_per_board-g_point])
         
     return np.asarray(M_results)
+
+def match_results_trials(M, num_trials, seed=None, games_per_board=2):
+    M_scores = np.empty([num_trials,4])
+
+    for n in range(num_trials):
+        M_results = match_results(M, seed=seed, games_per_board=games_per_board)
+
+        A_score = np.sum(M_results[:,0])
+        B_score = np.sum(M_results[:,1])
+        Dif_score = A_score - B_score
+        w_d_l = 1 if Dif_score > 0 else -1 if Dif_score < 0 else 0
+
+
+        M_scores[n] = [A_score, B_score, Dif_score, w_d_l]
     
+    return M_scores
+
+def get_matches_stats(M_scores):
+    A_score_mean = np.mean(M_scores[:,0])
+    B_score_mean = np.mean(M_scores[:,1])
+    A_score_std = np.std(M_scores[:,0])
+    B_score_std = np.std(M_scores[:,1])
+    
+    lose_sum = np.sum(M_scores[:,3]<0)
+    draw_sum = np.sum(M_scores[:,3]==0)
+    win_sum = np.sum(M_scores[:,3]>0)
+    N_boards = M_scores.shape[1]
+    
+    p_win = win_sum/N_boards
+    p_draw = draw_sum/N_boards
+    p_lose = lose_sum/N_boards
+    
+    return A_score_mean, B_score_mean, A_score_std, B_score_std, p_win, p_draw, p_lose
