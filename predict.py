@@ -42,7 +42,8 @@ def main():
     args = parser.parse_args()
 
     # Turn interactive plotting off
-    plt.ioff()
+    if not args.plot:
+        plt.ioff()
 
     # check folders
     if not os.path.exists(DATA_FOLDER):
@@ -64,7 +65,7 @@ def main():
     #print('\n')
     match_name = _slugify(chess.get_match_name(match_id))
     print('\nMatch info:')
-    print('\tname:\t{}'.format(chess.get_match_name(match_id)))
+    print('\tName:\t{}'.format(chess.get_match_name(match_id)))
 
     teams_names = chess.get_teams_names(match_id)
     print('\tTeam A:\t{}'.format(teams_names[0]))
@@ -87,7 +88,7 @@ def main():
         match_stats_list = chess.get_match_elos_list(data, format='list')
         print('\tDone!')
 
-        print('Saving temp file match_stats.xlsx')
+        print('\tSaving backup file{}'.format(match_stats_filename))
         match_stats_list_df = pd.DataFrame.from_dict(match_stats_list['boards_stats'])
         match_stats_list_df.to_excel(match_stats_filename, index=False)
 
@@ -354,7 +355,7 @@ def main():
         plt.ylabel('Frequency')
         plt.savefig(OUTPUTS_FOLDER+'/'+match_name+'_final_score_prob_biased.png')
         if not args.plot:
-            pltOUTPUTS_FOLDER+'/'+match_name+(fig)
+            plt.close(fig)
         plt.show()
 
         print(r'Expected final score = {:0.2f} (±{:0.2f}) - {:0.2f} (±{:0.2f})'.format(A_score_mean, A_score_std, B_score_mean, B_score_std))
